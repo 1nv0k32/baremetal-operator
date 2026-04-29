@@ -151,6 +151,11 @@ func (bb *BareMetalHostBuilder) SetNetworkData(ndata string) *BareMetalHostBuild
 	return bb
 }
 
+func (bb *BareMetalHostBuilder) SetVendorData(vdata string) *BareMetalHostBuilder {
+	bb.bmh.Spec.VendorData = &corev1.SecretReference{Name: vdata}
+	return bb
+}
+
 func (bb *BareMetalHostBuilder) SetImage(image metal3api.Image) *BareMetalHostBuilder {
 	bb.bmh.Spec.Image = &image
 	return bb
@@ -263,6 +268,11 @@ func (hb *HostClaimBuilder) SetMetaData(mdata string) *HostClaimBuilder {
 
 func (hb *HostClaimBuilder) SetNetworData(ndata string) *HostClaimBuilder {
 	hb.hostClaim.Spec.NetworkData = &corev1.SecretReference{Name: ndata}
+	return hb
+}
+
+func (hb *HostClaimBuilder) SetVendorData(vdata string) *HostClaimBuilder {
+	hb.hostClaim.Spec.VendorData = &corev1.SecretReference{Name: vdata}
 	return hb
 }
 

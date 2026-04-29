@@ -21,12 +21,12 @@ func TestEmpty(t *testing.T) {
 		name       string
 		hostData   provisioner.HostConfigData
 		diskFormat string
-		expected   nodes.ConfigDrive
+		expected   configDriveData
 	}{
 		{
 			name:     "default",
 			hostData: fixture.NewHostConfigData("", "", ""),
-			expected: nodes.ConfigDrive{
+			expected: configDriveData{
 				MetaData: map[string]any{
 					"local-hostname":   "myhost",
 					"local_hostname":   "myhost",
@@ -40,7 +40,7 @@ func TestEmpty(t *testing.T) {
 			name:       "default with disk format",
 			hostData:   fixture.NewHostConfigData("", "", ""),
 			diskFormat: "qcow2",
-			expected: nodes.ConfigDrive{
+			expected: configDriveData{
 				MetaData: map[string]any{
 					"local-hostname":   "myhost",
 					"local_hostname":   "myhost",
@@ -52,8 +52,8 @@ func TestEmpty(t *testing.T) {
 		},
 		{
 			name:     "everything",
-			hostData: fixture.NewHostConfigData("testUserData", "test: NetworkData", "test: Meta"),
-			expected: nodes.ConfigDrive{
+			hostData: fixture.NewHostConfigDataWithVendor("testUserData", "test: NetworkData", "test: Meta", "test: Vendor"),
+			expected: configDriveData{
 				MetaData: map[string]any{
 					"local-hostname":   "myhost",
 					"local_hostname":   "myhost",
@@ -66,12 +66,15 @@ func TestEmpty(t *testing.T) {
 					"test": "NetworkData",
 				},
 				UserData: "testUserData",
+				VendorData: map[string]any{
+					"test": "Vendor",
+				},
 			},
 		},
 		{
 			name:     "only network data",
 			hostData: fixture.NewHostConfigData("", "test: NetworkData", ""),
-			expected: nodes.ConfigDrive{
+			expected: configDriveData{
 				MetaData: map[string]any{
 					"local-hostname":   "myhost",
 					"local_hostname":   "myhost",
@@ -87,7 +90,7 @@ func TestEmpty(t *testing.T) {
 		{
 			name:     "only user data",
 			hostData: fixture.NewHostConfigData("testUserData", "", ""),
-			expected: nodes.ConfigDrive{
+			expected: configDriveData{
 				MetaData: map[string]any{
 					"local-hostname":   "myhost",
 					"local_hostname":   "myhost",
@@ -101,7 +104,7 @@ func TestEmpty(t *testing.T) {
 		{
 			name:     "only meta data",
 			hostData: fixture.NewHostConfigData("", "", "test: Meta"),
-			expected: nodes.ConfigDrive{
+			expected: configDriveData{
 				MetaData: map[string]any{
 					"local-hostname":   "myhost",
 					"local_hostname":   "myhost",
@@ -113,10 +116,26 @@ func TestEmpty(t *testing.T) {
 			},
 		},
 		{
+			name:     "only vendor data",
+			hostData: fixture.NewHostConfigDataWithVendor("", "", "", "test: Vendor"),
+			expected: configDriveData{
+				MetaData: map[string]any{
+					"local-hostname":   "myhost",
+					"local_hostname":   "myhost",
+					"metal3-name":      "myhost",
+					"metal3-namespace": "myns",
+					"name":             "myhost",
+				},
+				VendorData: map[string]any{
+					"test": "Vendor",
+				},
+			},
+		},
+		{
 			name:       "live ISO",
 			hostData:   fixture.NewHostConfigData("", "", ""),
 			diskFormat: "live-iso",
-			expected:   nodes.ConfigDrive{},
+			expected:   configDriveData{},
 		},
 	}
 

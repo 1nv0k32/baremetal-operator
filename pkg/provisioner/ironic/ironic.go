@@ -1179,7 +1179,17 @@ func (p *ironicProvisioner) Prepare(ctx context.Context, data provisioner.Prepar
 	return result, started, err
 }
 
-func (p *ironicProvisioner) getConfigDrive(ctx context.Context, data provisioner.ProvisionData) (configDrive nodes.ConfigDrive, err error) {
+// configDriveData mirrors gophercloud's nodes.ConfigDrive but additionally
+// supports vendor data. ProvisionStateOpts.ConfigDrive accepts any value, so
+// we can pass this richer type directly to Ironic.
+type configDriveData struct {
+	MetaData    map[string]any `json:"meta_data,omitempty"`
+	NetworkData map[string]any `json:"network_data,omitempty"`
+	UserData    any            `json:"user_data,omitempty"`
+	VendorData  map[string]any `json:"vendor_data,omitempty"`
+}
+
+func (p *ironicProvisioner) getConfigDrive(ctx context.Context, data provisioner.ProvisionData) (configDrive configDriveData, err error) {
 	// In theory, Ironic can support configdrive with live ISO by attaching
 	// it to another virtual media slot. However, some hardware does not
 	// support two virtual media devices at the same time, so we shouldn't
@@ -1230,6 +1240,19 @@ func (p *ironicProvisioner) getConfigDrive(ctx context.Context, data provisioner
 		}
 	}
 
+	// Retrieve vendor data. Default value is empty.
+	vendorDataRaw, err := data.HostConfig.VendorData(ctx)
+	if err != nil {
+		return configDrive, fmt.Errorf("could not retrieve vendor data: %w", err)
+	}
+	if vendorDataRaw != "" {
+		var vendorData map[string]any
+		if err = yaml.Unmarshal([]byte(vendorDataRaw), &vendorData); err != nil {
+			return configDrive, fmt.Errorf("failed to unmarshal vendor_data.json from secret: %w", err)
+		}
+		configDrive.VendorData = vendorData
+	}
+
 	return configDrive, nil
 }
 
@@ -1273,7 +1296,7 @@ func (p *ironicProvisioner) Provision(ctx context.Context, data provisioner.Prov
 		// should stop. (If the image values do not match, we want to try
 		// again.)
 		var provResult provisioner.Result
-		var configDrive nodes.ConfigDrive
+		var configDrive configDriveData
 		if ironicHasSameImage {
 			// Save me from "eventually consistent" systems built on
 			// top of relational databases...
@@ -1317,7 +1340,7 @@ func (p *ironicProvisioner) Provision(ctx context.Context, data provisioner.Prov
 
 	case nodes.Available:
 		var provResult provisioner.Result
-		var configDrive nodes.ConfigDrive
+		var configDrive configDriveData
 
 		if provResult, err = p.setUpForProvisioning(ctx, ironicNode, data); err != nil || provResult.Dirty || provResult.ErrorMessage != "" {
 			return provResult, err

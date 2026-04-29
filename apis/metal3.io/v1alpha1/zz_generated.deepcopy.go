@@ -275,6 +275,11 @@ func (in *BareMetalHostSpec) DeepCopyInto(out *BareMetalHostSpec) {
 		*out = new(v1.SecretReference)
 		**out = **in
 	}
+	if in.VendorData != nil {
+		in, out := &in.VendorData, &out.VendorData
+		*out = new(v1.SecretReference)
+		**out = **in
+	}
 	if in.CustomDeploy != nil {
 		in, out := &in.CustomDeploy, &out.CustomDeploy
 		*out = new(CustomDeploy)
@@ -949,6 +954,11 @@ func (in *HostClaimSpec) DeepCopyInto(out *HostClaimSpec) {
 	}
 	if in.MetaData != nil {
 		in, out := &in.MetaData, &out.MetaData
+		*out = new(v1.SecretReference)
+		**out = **in
+	}
+	if in.VendorData != nil {
+		in, out := &in.VendorData, &out.VendorData
 		*out = new(v1.SecretReference)
 		**out = **in
 	}

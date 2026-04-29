@@ -140,3 +140,21 @@ func (hcd *hostConfigData) MetaData(ctx context.Context) (string, error) {
 		"metaData",
 	)
 }
+
+// VendorData get host vendor data.
+func (hcd *hostConfigData) VendorData(ctx context.Context) (string, error) {
+	if hcd.host.Spec.VendorData == nil {
+		hcd.log.Info("VendorData is not set returning empty(nil) data")
+		return "", nil
+	}
+	namespace := hcd.host.Spec.VendorData.Namespace
+	if namespace == "" {
+		namespace = hcd.host.Namespace
+	}
+	return hcd.getSecretData(
+		ctx,
+		hcd.host.Spec.VendorData.Name,
+		namespace,
+		"vendorData",
+	)
+}

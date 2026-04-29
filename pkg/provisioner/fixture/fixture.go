@@ -28,6 +28,7 @@ type fixtureHostConfigData struct {
 	userData    string
 	networkData string
 	metaData    string
+	vendorData  string
 }
 
 // NewHostConfigData creates new host configuration data.
@@ -36,6 +37,18 @@ func NewHostConfigData(userData string, networkData string, metaData string) pro
 		userData:    userData,
 		networkData: networkData,
 		metaData:    metaData,
+	}
+}
+
+// NewHostConfigDataWithVendor creates new host configuration data including
+// vendor data. This helper exists so existing call sites of NewHostConfigData
+// continue to work unchanged.
+func NewHostConfigDataWithVendor(userData, networkData, metaData, vendorData string) provisioner.HostConfigData {
+	return &fixtureHostConfigData{
+		userData:    userData,
+		networkData: networkData,
+		metaData:    metaData,
+		vendorData:  vendorData,
 	}
 }
 
@@ -49,6 +62,10 @@ func (cd *fixtureHostConfigData) NetworkData(_ context.Context) (string, error) 
 
 func (cd *fixtureHostConfigData) MetaData(_ context.Context) (string, error) {
 	return cd.metaData, nil
+}
+
+func (cd *fixtureHostConfigData) VendorData(_ context.Context) (string, error) {
+	return cd.vendorData, nil
 }
 
 // fixtureProvisioner implements the provisioning.fixtureProvisioner interface

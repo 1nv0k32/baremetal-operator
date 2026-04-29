@@ -550,6 +550,13 @@ type BareMetalHostSpec struct {
 	// generated for the host, so most users do not need to set this field.
 	MetaData *corev1.SecretReference `json:"metaData,omitempty"`
 
+	// VendorData holds the reference to the Secret containing vendor
+	// specific data (e.g. vendor_data.json) which is passed to the Config
+	// Drive and made available to the first-boot software such as
+	// cloud-init. The format of the vendor data is specific to the
+	// first-boot software.
+	VendorData *corev1.SecretReference `json:"vendorData,omitempty"`
+
 	// Description is a human-entered text used to help identify the host.
 	Description string `json:"description,omitempty"`
 

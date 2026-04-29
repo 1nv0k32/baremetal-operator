@@ -66,6 +66,10 @@ type HostConfigData interface {
 	// MetaData is the interface for a function to retrieve metadata
 	// configuration for a host.
 	MetaData(ctx context.Context) (string, error)
+
+	// VendorData is the interface for a function to retrieve vendor
+	// specific configuration data for a host.
+	VendorData(ctx context.Context) (string, error)
 }
 
 type PreprovisioningImage struct {

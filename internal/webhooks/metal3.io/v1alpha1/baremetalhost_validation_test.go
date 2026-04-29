@@ -864,6 +864,21 @@ func TestValidateCreate(t *testing.T) {
 			wantedErr: "baremetalhosts.metal3.io \"test\" is forbidden: metaData: cross-namespace Secret references are not allowed",
 		},
 		{
+			name: "crossNamespaceVendorData",
+			newBMH: &metal3api.BareMetalHost{
+				TypeMeta:   tm,
+				ObjectMeta: om,
+				Spec: metal3api.BareMetalHostSpec{
+					VendorData: &corev1.SecretReference{
+						Name:      "test-secret",
+						Namespace: "different-namespace",
+					},
+				},
+			},
+			oldBMH:    nil,
+			wantedErr: "baremetalhosts.metal3.io \"test\" is forbidden: vendorData: cross-namespace Secret references are not allowed",
+		},
+		{
 			name: "multipleSecretsCrossNamespace",
 			newBMH: &metal3api.BareMetalHost{
 				TypeMeta:   tm,

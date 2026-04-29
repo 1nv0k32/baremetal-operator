@@ -62,6 +62,8 @@ const (
 	BadMetaDataSecretReason = "MetaDataSecretSyncFailure"
 	// BadNetworkDataSecretReason is a reason used when the secret for meta data cannot be synchronized.
 	BadNetworkDataSecretReason = "NetworkDataSecretSyncFailure"
+	// BadVendorDataSecretReason is a reason used when the secret for vendor data cannot be synchronized.
+	BadVendorDataSecretReason = "VendorDataSecretSyncFailure"
 	// BareMetalHostNotSynchronizedReason is the reason used when the synchronization of BareMetalHost state
 	// is not successful.
 	BareMetalHostNotSynchronizedReason = "BareMetalHostNotSynchronized"
@@ -91,6 +93,11 @@ type HostClaimSpec struct {
 	// MetaData holds the reference to the Secret containing host metadata
 	// (e.g. meta_data.json) which is passed to the Config Drive.
 	MetaData *corev1.SecretReference `json:"metaData,omitempty"`
+
+	// VendorData holds the reference to the Secret containing vendor
+	// specific data (e.g. vendor_data.json) which is passed to the Config
+	// Drive.
+	VendorData *corev1.SecretReference `json:"vendorData,omitempty"`
 
 	// A custom deploy procedure. This is an advanced feature that allows
 	// using a custom deploy step provided by a site-specific deployment

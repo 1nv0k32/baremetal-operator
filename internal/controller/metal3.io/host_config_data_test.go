@@ -80,6 +80,18 @@ func TestLabelSecrets(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "vendor-data",
+			getter: func(hcd *hostConfigData) (string, error) {
+				return hcd.VendorData(t.Context())
+			},
+			hostSpec: &metal3api.BareMetalHostSpec{
+				VendorData: &corev1.SecretReference{
+					Name:      "vendor-data",
+					Namespace: namespace,
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -124,6 +136,9 @@ func TestProvisionWithHostConfig(t *testing.T) {
 		ErrPreprovisioningNetworkData      bool
 		ExpectedMetaData                   string
 		ErrMetaData                        bool
+		VendorDataSecret                   *corev1.Secret
+		ExpectedVendorData                 string
+		ErrVendorData                      bool
 	}{
 		{
 			Scenario: "host with user data only",
@@ -395,6 +410,88 @@ func TestProvisionWithHostConfig(t *testing.T) {
 			ErrNetworkData:    true,
 		},
 		{
+			Scenario: "host with vendor data only",
+			Host: newHost("host-vendor-data",
+				&metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
+						Address:         "ipmi://192.168.122.1:6233",
+						CredentialsName: defaultSecretName,
+					},
+					VendorData: &corev1.SecretReference{
+						Name:      "vendor-data",
+						Namespace: namespace,
+					},
+				}),
+			VendorDataSecret:   newSecret("vendor-data", map[string]string{"vendorData": "key: value"}),
+			ExpectedVendorData: base64.StdEncoding.EncodeToString([]byte("key: value")),
+			ErrVendorData:      false,
+		},
+		{
+			Scenario: "host with vendor data only, no namespace",
+			Host: newHost("host-vendor-data",
+				&metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
+						Address:         "ipmi://192.168.122.1:6233",
+						CredentialsName: defaultSecretName,
+					},
+					VendorData: &corev1.SecretReference{
+						Name: "vendor-data",
+					},
+				}),
+			VendorDataSecret:   newSecret("vendor-data", map[string]string{"vendorData": "key: value"}),
+			ExpectedVendorData: base64.StdEncoding.EncodeToString([]byte("key: value")),
+			ErrVendorData:      false,
+		},
+		{
+			Scenario: "vendor-data secret in different namespace",
+			Host: newHost("host-vendor-data",
+				&metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
+						Address:         "ipmi://192.168.122.1:6233",
+						CredentialsName: defaultSecretName,
+					},
+					VendorData: &corev1.SecretReference{
+						Name:      "vendor-data",
+						Namespace: "other-namespace",
+					},
+				}),
+			VendorDataSecret: newSecretInNamespace("vendor-data", "other-namespace", map[string]string{"vendorData": "key: value"}),
+			ErrVendorData:    true,
+		},
+		{
+			Scenario: "host with non-existent vendor data",
+			Host: newHost("host-vendor-data",
+				&metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
+						Address:         "ipmi://192.168.122.1:6233",
+						CredentialsName: defaultSecretName,
+					},
+					VendorData: &corev1.SecretReference{
+						Name:      "vendor-data",
+						Namespace: namespace,
+					},
+				}),
+			ExpectedVendorData: "",
+			ErrVendorData:      true,
+		},
+		{
+			Scenario: "host with vendor data falling back to value key",
+			Host: newHost("host-vendor-data",
+				&metal3api.BareMetalHostSpec{
+					BMC: metal3api.BMCDetails{
+						Address:         "ipmi://192.168.122.1:6233",
+						CredentialsName: defaultSecretName,
+					},
+					VendorData: &corev1.SecretReference{
+						Name:      "vendor-data",
+						Namespace: namespace,
+					},
+				}),
+			VendorDataSecret:   newSecret("vendor-data", map[string]string{"value": "fallback-vendor"}),
+			ExpectedVendorData: base64.StdEncoding.EncodeToString([]byte("fallback-vendor")),
+			ErrVendorData:      false,
+		},
+		{
 			Scenario: "preprov network data with wrong key returns empty (not error)",
 			Host: newHost("host-preprov-wrong-key",
 				&metal3api.BareMetalHostSpec{
@@ -428,6 +525,7 @@ func TestProvisionWithHostConfig(t *testing.T) {
 			_ = c.Create(t.Context(), tc.UserDataSecret)
 			_ = c.Create(t.Context(), tc.NetworkDataSecret)
 			_ = c.Create(t.Context(), tc.PreprovNetworkDataSecret)
+			_ = c.Create(t.Context(), tc.VendorDataSecret)
 			baselog := ctrl.Log.WithName("controllers").WithName("BareMetalHost")
 			hcd := &hostConfigData{
 				host:          tc.Host,
@@ -469,6 +567,15 @@ func TestProvisionWithHostConfig(t *testing.T) {
 
 			if actualMetaData != tc.ExpectedMetaData {
 				t.Fatal(fmt.Errorf("Failed to assert MetaData. Expected '%s' got '%s'", tc.ExpectedMetaData, actualMetaData))
+			}
+
+			actualVendorData, err := hcd.VendorData(t.Context())
+			if err != nil && !tc.ErrVendorData {
+				t.Fatal(err)
+			}
+
+			if actualVendorData != tc.ExpectedVendorData {
+				t.Fatal(fmt.Errorf("Failed to assert VendorData. Expected '%s' got '%s'", tc.ExpectedVendorData, actualVendorData))
 			}
 		})
 	}

@@ -382,12 +382,13 @@ func validateCrossNamespaceSecretReferences(hostNamespace, hostName, fieldName s
 
 // validateCrossNamespaceSecretReferences checks all Secret references in the BareMetalHost spec
 // to ensure they do not reference Secrets from other namespaces. This includes userData,
-// networkData, and metaData Secret references.
+// networkData, metaData and vendorData Secret references.
 func (webhook *BareMetalHost) validateCrossNamespaceSecretReferences(host *metal3api.BareMetalHost) []error {
 	secretRefs := map[*corev1.SecretReference]string{
 		host.Spec.UserData:    "userData",
 		host.Spec.NetworkData: "networkData",
 		host.Spec.MetaData:    "metaData",
+		host.Spec.VendorData:  "vendorData",
 	}
 	errs := []error{}
 	for ref, fieldName := range secretRefs {
