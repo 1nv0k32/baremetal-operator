@@ -956,12 +956,15 @@ func getIronicClient(e2eConfig *Config) (*gophercloud.ServiceClient, error) {
 		IronicUser:         username,
 		IronicUserPassword: password,
 	})
+	if err != nil {
+		return nil, err
+	}
 	transport, errTransport := transport.NewTransport(
 		transport.TLSInfo{InsecureSkipVerify: true},
 		tlsTimeout,
 	)
 	if errTransport != nil {
-		return nil, err
+		return nil, errTransport
 	}
 	client.HTTPClient = http.Client{
 		Transport: transport,
@@ -1013,8 +1016,8 @@ func WaitForIronicReady(ctx context.Context, input WaitForIronicInput) {
 func WaitForIronicRedeploy(ctx context.Context, input WaitForIronicInput) {
 	Logf("Waiting for Ironic %q to be redeployed", input.Name)
 
-	var targetReplicas int32
 	updateReplica := true
+	targetReplicas := int32(0)
 
 	Eventually(func(g Gomega) {
 		ironicDeployment := &v1.Deployment{}
@@ -1029,16 +1032,17 @@ func WaitForIronicRedeploy(ctx context.Context, input WaitForIronicInput) {
 			ironicDeployment.Spec.Replicas = ptr.To(targetReplicas)
 			err := input.Client.Update(ctx, ironicDeployment)
 			g.Expect(err).ToNot(HaveOccurred())
-			if targetReplicas == 1 {
-				updateReplica = false
-			}
-			targetReplicas = 1
+			updateReplica = false
 		}
 
 		checkReady := func() bool {
-			if ironicDeployment.Status.ReadyReplicas == ptr.Deref(ironicDeployment.Spec.Replicas, 0) &&
-				ironicDeployment.Status.ReadyReplicas == targetReplicas {
-				return true
+			if ironicDeployment.Status.ReadyReplicas == targetReplicas {
+				if targetReplicas == 0 {
+					targetReplicas = 1
+					updateReplica = true
+				} else {
+					return true
+				}
 			}
 			return false
 		}
