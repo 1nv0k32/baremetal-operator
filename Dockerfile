@@ -10,10 +10,12 @@ WORKDIR /workspace
 # Bring in the go dependencies before anything else so we can take
 # advantage of caching these layers in future builds.
 COPY go.mod go.sum ./
+COPY vendor/ ./vendor
+ENV GO111MODULE=on
 COPY apis/go.mod apis/go.sum apis/
 COPY hack/tools/go.mod hack/tools/go.sum hack/tools/
 COPY pkg/hardwareutils/go.mod pkg/hardwareutils/go.sum pkg/hardwareutils/
-RUN go mod download
+
 ARG LDFLAGS=-s -w -extldflags=-static
 
 COPY . .
