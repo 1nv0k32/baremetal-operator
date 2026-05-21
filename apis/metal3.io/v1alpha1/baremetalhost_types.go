@@ -368,6 +368,10 @@ type BMCDetails struct {
 
 // HardwareRAIDVolume defines the desired configuration of volume in hardware RAID.
 type HardwareRAIDVolume struct {
+	// Setting this to true, causes installer to consider this volume as root device for installation.
+	// This can only be set for one of the volumes.
+	RootVolume *bool `json:"rootVolume,omitempty"`
+
 	// Size of the logical disk to be created in GiB. If unspecified or
 	// set be 0, the maximum capacity of disk will be used for logical
 	// disk.
@@ -404,6 +408,10 @@ type HardwareRAIDVolume struct {
 
 // SoftwareRAIDVolume defines the desired configuration of volume in software RAID.
 type SoftwareRAIDVolume struct {
+	// Setting this to true, causes installer to consider this volume as root device for installation.
+	// This can only be set for one of the volumes.
+	RootVolume *bool `json:"rootVolume,omitempty"`
+
 	// Size of the logical disk to be created in GiB.
 	// If unspecified or set be 0, the maximum capacity of disk will be used for logical disk.
 	// +kubebuilder:validation:Minimum=0
@@ -1139,6 +1147,22 @@ func (image *Image) GetChecksum() (checksum, checksumType string, err error) {
 
 	checksum = image.Checksum
 	return checksum, checksumType, nil
+}
+
+func (raid *RAIDConfig) GetRootVolumeCount() (rootCount int) {
+	for _, volume := range raid.SoftwareRAIDVolumes {
+		if volume.RootVolume != nil && *volume.RootVolume {
+			rootCount++
+		}
+	}
+
+	for _, volume := range raid.HardwareRAIDVolumes {
+		if volume.RootVolume != nil && *volume.RootVolume {
+			rootCount++
+		}
+	}
+
+	return rootCount
 }
 
 // +kubebuilder:object:root=true
